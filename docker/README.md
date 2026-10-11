@@ -46,10 +46,9 @@ Or with Compose: [`docker-compose.yml`](docker-compose.yml) beside this file.
 
 Until October 2026 the packaging lived in its own repository,
 [weblinked-docker](https://github.com/stoatworks-labs/weblinked-docker), and the
-image was **`ghcr.io/stoatworks-labs/weblinked-docker:edge`**. That name's `:edge`
-is still pushed with the same image for now, so an existing compose file or
-Unraid template keeps updating — but move to `ghcr.io/stoatworks-labs/weblinked`.
-The old name will stop updating once the transition is over.
+image was **`ghcr.io/stoatworks-labs/weblinked-docker:edge`**. That name is no
+longer updated: its `:edge` is frozen at a build of WebLinked as of 22 August 2026 (just after v1.0.1). Change an
+existing compose file or Unraid template to `ghcr.io/stoatworks-labs/weblinked:edge`.
 
 One thing the move fixed: the old image cloned `main` at build time, and that
 layer was always a cache hit, so its `:edge` quietly stayed on WebLinked as of

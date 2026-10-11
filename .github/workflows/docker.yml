@@ -6,9 +6,9 @@ name: image
 #   :X.Y.Z     a v* tag (and :X.Y)
 #   :sha-xxxx  every build
 #
-# During the move from stoatworks-labs/weblinked-docker, main also re-tags the
-# same image as ghcr.io/stoatworks-labs/weblinked-docker:edge, so existing compose
-# files and Unraid templates keep updating. Drop that step once they have moved.
+# The old name, ghcr.io/stoatworks-labs/weblinked-docker, is not pushed: that
+# package never granted this repository write access, and Allan chose to leave it
+# frozen (2026-10-11) rather than keep two names alive.
 #
 # amd64 only, deliberately. This build compiles CEF's wrapper and the whole of
 # WebLinked; under QEMU emulation for arm64 that is hours, for an architecture
@@ -165,17 +165,3 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
 
-      # The old name, for the transition. A separate step, and allowed to fail,
-      # because it needs the weblinked-docker package to grant this repository
-      # write access (package settings → Manage Actions access) — and a missing
-      # grant must not stop the image under its real name from publishing.
-      - name: Also tag as weblinked-docker:edge
-        if: github.ref == 'refs/heads/main'
-        continue-on-error: true
-        run: |
-          src="ghcr.io/stoatworks-labs/weblinked:sha-${GITHUB_SHA::7}"
-          if ! docker buildx imagetools create \
-                 --tag ghcr.io/stoatworks-labs/weblinked-docker:edge "$src"; then
-            echo "::warning::could not push weblinked-docker:edge — grant stoatworks-labs/weblinked write access in that package's settings"
-            exit 1
-          fi

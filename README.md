@@ -310,8 +310,8 @@ docker run -d --name weblinked --network host \
 
 - **`ghcr.io/stoatworks-labs/weblinked`** — `:edge` follows `main`, `:X.Y.Z` is a
   release, `:sha-xxxxxxx` one commit. It used to be published as
-  `ghcr.io/stoatworks-labs/weblinked-docker`, whose `:edge` still gets the same
-  image for now; move to the new name.
+  `ghcr.io/stoatworks-labs/weblinked-docker`, which no longer updates: its `:edge`
+  is frozen at a build of WebLinked as of 22 August 2026 (just after v1.0.1). Move to the new name.
 - **Bring your own NDI runtime.** `libndi.so.6` is not in the image and cannot
   be — mount it at `/opt/ndi/lib`. Without it everything runs and the NDI output
   reports itself unavailable.

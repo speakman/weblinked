@@ -379,8 +379,9 @@ stoatworks-labs/weblinked-docker until October 2026, which `git clone`d main at
 build time — and that layer was a cache hit on every run, so its `:edge` sat on
 22 August's main through six releases while every build went green. **Never
 fetch the source inside the Dockerfile again**; COPY from the context is what
-keys the cache on the files. During the transition main also re-tags the image
-as `weblinked-docker:edge`. User docs: `docker/README.md`.
+keys the cache on the files. The old name is not pushed any more and its `:edge`
+stays frozen (no write grant on that package; Allan's call, 2026-10-11). User
+docs: `docker/README.md`.
 
 The decisions in it that look arbitrary and are not:
 

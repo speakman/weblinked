@@ -15,6 +15,9 @@ set(WEBLINKED_CEF_VERSION "150.0.17+g94c1726+chromium-150.0.7871.187"
 # sha1 of the *_minimal.tar.bz2 archive for each supported platform, as
 # published in https://cef-builds.spotifycdn.com/index.json.
 set(_weblinked_cef_sha1_macosarm64   "ade718b28418a975efb98bb4b0c9daab52c12dc0")
+# linux64 is the hash weblinked-docker's image builds verified against this same
+# version. docker/Dockerfile reads it from this line, so keep it here.
+set(_weblinked_cef_sha1_linux64      "341947ed007fb5ddbcf9dfb33db0cf4866ffa1ec")
 
 function(_weblinked_cef_platform out_var)
   if(APPLE)

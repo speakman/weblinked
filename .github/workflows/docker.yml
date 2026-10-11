@@ -1,0 +1,181 @@
+name: image
+
+# The headless container, ghcr.io/stoatworks-labs/weblinked. See docker/README.md.
+#
+#   :edge      main, every push that touches the build
+#   :X.Y.Z     a v* tag (and :X.Y)
+#   :sha-xxxx  every build
+#
+# During the move from stoatworks-labs/weblinked-docker, main also re-tags the
+# same image as ghcr.io/stoatworks-labs/weblinked-docker:edge, so existing compose
+# files and Unraid templates keep updating. Drop that step once they have moved.
+#
+# amd64 only, deliberately. This build compiles CEF's wrapper and the whole of
+# WebLinked; under QEMU emulation for arm64 that is hours, for an architecture
+# essentially nobody runs Unraid on. linuxarm64 CEF exists if that changes.
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+    # Only what reaches the image — the same set .dockerignore admits — plus the
+    # packaging itself. Path filters are not applied to tag pushes, so every v*
+    # tag builds.
+    paths:
+      - "CMakeLists.txt"
+      - "cmake/**"
+      - "src/**"
+      - "tests/**"
+      - "third_party/**"
+      - "docker/**"
+      - "!docker/**.md"
+      - ".dockerignore"
+      - ".github/workflows/docker.yml"
+  pull_request:
+    paths:
+      - "CMakeLists.txt"
+      - "cmake/**"
+      - "src/**"
+      - "tests/**"
+      - "third_party/**"
+      - "docker/**"
+      - "!docker/**.md"
+      - ".dockerignore"
+      - ".github/workflows/docker.yml"
+  workflow_dispatch:
+
+# Two pushes to main close together would otherwise race, and the slower, older
+# build could land on :edge last.
+concurrency:
+  group: image-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    # The CEF download and the C++ compile are the slow parts; the default
+    # 360-minute cap is generous but an infinite hang should not eat it.
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Version
+        id: ver
+        run: |
+          version="$(sed -n 's/^project(weblinked VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)"
+          [ -n "$version" ] || { echo "::error::no version in CMakeLists.txt"; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "building $version"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/stoatworks-labs/weblinked
+          flavor: latest=false
+          tags: |
+            type=raw,value=edge,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,format=short
+          # The version label is what lets anyone tell from the registry alone
+          # whether :edge is current — the question nobody could answer about
+          # the image this replaced.
+          labels: |
+            org.opencontainers.image.title=WebLinked
+            org.opencontainers.image.description=WebLinked: renders a URL to NDI, headless — no display, no card, no desktop.
+            com.stoatworks.weblinked.version=${{ steps.ver.outputs.version }}
+
+      # Built into the runner's Docker first and tested there, so an image that
+      # fails the smoke test never reaches the registry.
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64
+          load: true
+          tags: weblinked:smoke
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # A green build only proves the image assembled. The unit suite already ran
+      # as a build step; what it cannot prove is that Chromium actually
+      # initialises headless — which is the entire point of this image, and which
+      # fails at *runtime*, not at build time. Run with a token, because that is
+      # how the README tells people to run it, and the healthcheck once ignored it.
+      - name: Smoke test — does it render with no display?
+        run: |
+          docker run -d --name smoke -p 7654:7654 -e WEBLINKED_TOKEN=smoke \
+            weblinked:smoke --url https://example.com --format 1080p50
+
+          auth="Authorization: Bearer smoke"
+          for i in $(seq 1 30); do
+            if curl -fsS --max-time 3 -H "$auth" http://127.0.0.1:7654/api/state >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+
+          curl -fsS --max-time 5 -H "$auth" http://127.0.0.1:7654/api/state > state.json || {
+            echo "::error::the control API never came up"
+            docker logs smoke 2>&1 | tail -50
+            exit 1
+          }
+
+          python3 docker/smoke_assert.py --version "${{ steps.ver.outputs.version }}" < state.json
+
+          # The preview is fed by the same frame pipeline as NDI, so a
+          # correctly sized preview buffer is real evidence about the outputs.
+          BYTES="$(curl -fsS --max-time 10 -H "$auth" http://127.0.0.1:7654/api/preview | wc -c)"
+          echo "preview bytes: $BYTES"
+          [ "$BYTES" -eq 518400 ] || { echo "::error::expected 480x270 BGRA (518400 bytes)"; exit 1; }
+
+          # The image's HEALTHCHECK, run now rather than waiting out its interval.
+          docker exec smoke /healthcheck.sh || { echo "::error::the healthcheck fails on a working container"; exit 1; }
+          echo "healthcheck: ok"
+
+      - name: Container logs on failure
+        if: failure()
+        run: docker logs smoke 2>&1 | tail -100 || true
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Same inputs as Build, so every layer is a cache hit and this only pushes.
+      - name: Push
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+
+      # The old name, for the transition. A separate step, and allowed to fail,
+      # because it needs the weblinked-docker package to grant this repository
+      # write access (package settings → Manage Actions access) — and a missing
+      # grant must not stop the image under its real name from publishing.
+      - name: Also tag as weblinked-docker:edge
+        if: github.ref == 'refs/heads/main'
+        continue-on-error: true
+        run: |
+          src="ghcr.io/stoatworks-labs/weblinked:sha-${GITHUB_SHA::7}"
+          if ! docker buildx imagetools create \
+                 --tag ghcr.io/stoatworks-labs/weblinked-docker:edge "$src"; then
+            echo "::warning::could not push weblinked-docker:edge — grant stoatworks-labs/weblinked write access in that package's settings"
+            exit 1
+          fi

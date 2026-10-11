@@ -62,6 +62,16 @@ actually contains*, which is the quickest way to find out whether your download 
 > **The hosted builders have no DeckLink or AJA SDK**, so **SDI output needs a local build** —
 > see [02-building.md](02-building.md).
 
+### On a server, in Docker
+
+For a headless box with no display and no card there is a container image,
+**`ghcr.io/stoatworks-labs/weblinked`** (`:edge` follows `main`; it used to be published as
+`weblinked-docker`). It is NDI out and the control API, nothing else — and **unlike the downloads
+it carries no NDI runtime**: you mount `libndi.so.6` into it yourself, because a public image has no
+EULA to carry the NDI licence's terms. It needs host networking for NDI discovery, which puts the
+control port on every interface — so keep it on a tailnet and set a token. See
+[docker/README.md](../docker/README.md).
+
 ---
 
 ## The control page
@@ -209,3 +219,4 @@ The log lives at `~/Library/Logs/WebLinked/WebLinked.log` (or `$WEBLINKED_LOG_DI
 - [04-verification.md](04-verification.md) — **what has actually been measured**, with commands
 - [05-settings.md](05-settings.md) — every setting and what wins
 - [06-ndi-distribution.md](06-ndi-distribution.md) — the bundled NDI runtime
+- [../docker/README.md](../docker/README.md) — the headless container image

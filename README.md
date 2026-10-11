@@ -234,6 +234,7 @@ macOS builds are signed and notarised and open normally. The Windows builds are 
 | **OMT** | Compiles against `libomt.h` 1.0.0.16. **Never tested against an OMT receiver.** |
 | **DeckLink** | **Verified against a real card, on two card profiles** (DeckLink Duo 2): output, pre-roll and buffer level, with colour confirmed by SDI loopback captures at 1080p50 and 1080p25 — identical sampled values in a full-duplex and a half-duplex profile. Key + fill is measured to the extent one card allows: the fill carries straight alpha. The **key channel itself**, the internal-keying composite and **audio over SDI** are still unmeasured, and a keyed 1080p50 is beyond what this card will carry. |
 | **AJA** | Compiles against libajantv2 18.1. **Never run against a card.** Off by default. |
+| **Container image** | Builds from this repository, runs the unit suite as a build step, and is smoke-tested headless in CI on every build before it is pushed: running, ticking, painting, the right version, a correctly sized preview frame. **No NDI receiver has seen output from the image**, because libndi is not in it. See [docker/README.md](docker/README.md). |
 | **Shared surface (Syphon / Spout)** | **Syphon verified against Resolume Arena 7.27.1**: it lists the source, loads it on a layer at 1920x1080 and labels it premultiplied unaided. Colour, alpha and orientation are exact through a receiver linking *Arena's own* Syphon framework. **Spout is verified only through a harness** — the real backend and SDK, its pixels checked by a Spout receiver, but no real Spout application was involved and the shipped Windows binary's own `--spout` output has not been driven. |
 
 Read [docs/04-verification.md](docs/04-verification.md) before trusting any of
@@ -293,6 +294,35 @@ browser unless you add `--open`; `--no-open` suppresses it either way.
 engine in a separate tray launcher, and the *engine only*. The engine now puts
 its own icon in the menu bar, so the wrapper was retired in v1.0.0 and there is
 just the one thing to install.
+
+## Run it in Docker
+
+For a server with no display and no card: a URL in, NDI out, headless.
+
+```bash
+docker run -d --name weblinked --network host \
+  -v /path/to/ndi/lib:/opt/ndi/lib:ro \
+  -e WEBLINKED_BIND=100.64.0.5 -e WEBLINKED_TOKEN=change-me \
+  ghcr.io/stoatworks-labs/weblinked:edge \
+  --url 'https://grafana.example/public-dashboards/abc123' \
+  --format 1080p50 --ndi=Grafana
+```
+
+- **`ghcr.io/stoatworks-labs/weblinked`** — `:edge` follows `main`, `:X.Y.Z` is a
+  release, `:sha-xxxxxxx` one commit. It used to be published as
+  `ghcr.io/stoatworks-labs/weblinked-docker`, whose `:edge` still gets the same
+  image for now; move to the new name.
+- **Bring your own NDI runtime.** `libndi.so.6` is not in the image and cannot
+  be — mount it at `/opt/ndi/lib`. Without it everything runs and the NDI output
+  reports itself unavailable.
+- **Host networking is required** for NDI discovery, and puts the control port on
+  every interface the server has. Keep it on a tailnet, bind it there, and set a
+  token: `POST /api/script` runs arbitrary JavaScript in the page.
+- NDI, OMT, the preview and HTTP/OSC control only. No SDI, screen, KMS, Syphon,
+  Spout or RTMP/SRT output, and no mDNS advertisement — find it by address.
+
+Everything else — the environment variables, Compose, Grafana, building the image
+yourself and what is verified — is in [docker/README.md](docker/README.md).
 
 ## Control
 
@@ -384,6 +414,8 @@ who can reach the port can change what is on air.
   writes
 - [docs/06-ndi-distribution.md](docs/06-ndi-distribution.md) — why NDI is loaded
   at run time, what the licence permits, and the attribution every project owes
+- [docker/README.md](docker/README.md) — the headless container image: NDI out,
+  no display, no card
 - [AGENTS.md](AGENTS.md) — orientation for an AI assistant or a new contributor
 
 ## Control it from Companion

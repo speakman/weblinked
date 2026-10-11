@@ -172,6 +172,20 @@ Ubuntu 24.04 needed only the packages listed below and took one `cmake` and one
   well, and the binary no longer links X11, EGL or GLES at all (libcef.so still
   links X11 itself; run it with `--ozone-platform=headless`).
 
+## In a container
+
+`docker/Dockerfile` builds the headless Linux image from this checkout — the
+repository root is the build context:
+
+```bash
+docker build -f docker/Dockerfile -t weblinked .
+```
+
+It takes CEF's version and linux64 sha1 from `cmake/FetchCEF.cmake`, builds with
+the screen, shared, DeckLink, AJA, KMS and stream outputs off, and runs the unit
+suite as a build step. Why each is off, and how to run it, is in
+[docker/README.md](../docker/README.md).
+
 ## Tests
 
 ```bash

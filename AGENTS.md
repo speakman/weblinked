@@ -71,6 +71,7 @@ src/app/      entry points, Info.plists, entitlements, the tray icon
 third_party/  cef, ndi, omt headers, and the vendored Syphon server subset
 tools/        ndi_probe, syphon_probe, mdns_probe — independent, for verification
 tests/        unit tests; link core only
+docker/       the headless container image (§7) — packaging only, no source
 ```
 
 There was a separate Tauri tray launcher here until v1.0.0. It existed to give
@@ -369,6 +370,53 @@ Run the app, then check it with the probe rather than with its own counters:
 
 The app's own `/api/state` can only tell you it *sent* something. `ndi_probe`
 tells you what arrived, which is the claim that matters.
+
+## 7. The container image (`docker/`)
+
+`ghcr.io/stoatworks-labs/weblinked`, built by `.github/workflows/docker.yml` from
+this checkout (context = repo root, `docker/Dockerfile`). It lived in
+stoatworks-labs/weblinked-docker until October 2026, which `git clone`d main at
+build time — and that layer was a cache hit on every run, so its `:edge` sat on
+22 August's main through six releases while every build went green. **Never
+fetch the source inside the Dockerfile again**; COPY from the context is what
+keys the cache on the files. During the transition main also re-tags the image
+as `weblinked-docker:edge`. User docs: `docker/README.md`.
+
+The decisions in it that look arbitrary and are not:
+
+- **libndi is never in the image.** The NDI licence needs the distributor's terms
+  to forbid modification and reverse engineering; the release installers carry
+  an EULA that does, a public MIT image has none. It is mounted at
+  `/opt/ndi/lib` (on `LD_LIBRARY_PATH`). A change that "conveniently" bakes it
+  in is the one change this packaging exists to prevent.
+- **KMS and STREAM are built OFF.** KMS needs `/dev/dri`, DRM master and a
+  monitor on the server — a board driving its own screen, which is the tarball's
+  job. STREAM needs an ffmpeg binary, and shipping one puts an H.264/AAC encoder
+  in a public image (see the codec section of `docs/06-ndi-distribution.md`).
+  `docker/smoke_assert.py` fails if either turns up in `compiled_backends`, so
+  changing this is a decision, not an accident.
+- **No avahi in the image**, so it does not advertise. avahi-client reaches the
+  daemon over the host's D-Bus system bus, and mounting that into a container is
+  a bigger grant than discovery is worth. The weblinked-docker docs once said
+  mounting the avahi socket worked; it never could have.
+- **The three Chromium switches in the entrypoint** (`--ozone-platform=headless
+  --use-gl=angle --use-angle=swiftshader`) are the whole headless story. Drop
+  any one and the container exits at startup.
+- **Host networking is a correctness flag**: NDI discovery is mDNS, and a bridge
+  network hides the sender silently.
+- **The tailnet warning is stronger than boilerplate**: `POST /api/script` makes
+  an exposed control port remote code execution in a browser. Do not weaken it.
+- **The builder's `-dev` packages are libcef.so's DT_NEEDED entries**, not ours;
+  without them the link fails with `undefined reference to dbus_/snd_/atk_/NSS_`.
+  CEF links X11 even with the screen output off.
+- **CEF's version and linux64 sha1 are read from `cmake/FetchCEF.cmake`.** A CEF
+  bump there reaches the image, and one that forgets the linux64 sha1 fails the
+  image build — correctly.
+- **`.dockerignore` is an allow-list**, kept in step with the Dockerfile's COPY
+  lines and the workflow's path filter.
+- **amd64 only**: arm64 would be a QEMU-emulated Chromium-wrapper compile.
+- **The Unraid template lives in stoatworks-unraid**, never here. Change a port,
+  mount or variable and it has to change there too.
 
 ## Notes
 

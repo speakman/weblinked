@@ -1,0 +1,25 @@
+# network_mode: host is required, not preferred — NDI discovery is mDNS and
+# Docker's bridge network does not forward it. On bridge the sender is simply
+# never seen by any receiver, with nothing logged anywhere.
+#
+# The image was published as ghcr.io/stoatworks-labs/weblinked-docker until the
+# packaging moved into this repository. That name's :edge is still pushed with
+# the same image for now; this is the name to use.
+services:
+  weblinked:
+    image: ghcr.io/stoatworks-labs/weblinked:edge
+    container_name: weblinked
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      # The NDI runtime you supplied yourself — see docker/README.md. Without it
+      # the container still runs and reports the NDI backend unavailable.
+      - ./ndi:/opt/ndi/lib:ro
+      # Cookies and storage. Drop it to keep them in memory; two containers
+      # must never share one, because Chromium locks the directory.
+      - ./cache:/cache
+    command:
+      - --url=https://example.com
+      - --format=1080p50
+      - --ndi=WebLinked
+      - --cache=/cache

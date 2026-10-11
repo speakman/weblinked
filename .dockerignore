@@ -1,0 +1,18 @@
+# For docker/Dockerfile, which builds from this checkout with the repository root
+# as its context:  docker build -f docker/Dockerfile .
+#
+# An allow-list rather than a deny-list. A working checkout carries hundreds of
+# megabytes the image never reads — third_party/cef alone is ~350 MB, plus build/
+# and the plugin's tree — and COPY layers are keyed on what they are given, so a
+# docs edit that reached the context would rebuild Chromium's wrapper for
+# nothing. Keep this in step with the COPY lines in docker/Dockerfile and the
+# path filter in .github/workflows/docker.yml.
+*
+!CMakeLists.txt
+!cmake
+!src
+!tests
+!third_party
+third_party/cef
+!docker/docker-entrypoint.sh
+!docker/healthcheck.sh

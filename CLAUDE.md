@@ -206,4 +206,5 @@ everyone who already installed a second Add/Remove Programs entry.
 | `third_party/spout/` | vendored Spout DirectX sender subset (BSD-2) — see its README |
 | `src/control/` | HTTP server, OSC receiver, embedded control page |
 | `src/app/` | entry points, Info.plists, entitlements, the macOS menu bar item |
+| `docker/` | the headless container image and its smoke test — see `docker/README.md` and AGENTS.md §7 |
 | `tools/` | independent receivers (`ndi_probe`, `sdi_probe`, `syphon_probe`, `spout_probe`, `mdns_probe`) plus the DeckLink diagnostics `dl_profile` / `dl_scan`, and the HTML test pages |

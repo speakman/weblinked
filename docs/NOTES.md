@@ -15,6 +15,23 @@ NDI + OMT over network. C++20/CMake. `~/Projects/weblinked`, GitHub **PUBLIC MIT
 (stoatworks-labs/weblinked). **v0.7.0 released 2026-08-01** — installers for macOS
 (.dmg/.pkg), Windows (.exe/.zip) and Linux (.tar.gz), built by GitHub Actions.
 
+**The container image moved in here on 2026-10-11** (`docker/`, workflow
+`.github/workflows/docker.yml`), from stoatworks-labs/weblinked-docker, and is now
+published as `ghcr.io/stoatworks-labs/weblinked`. The move was forced by a stale
+image: weblinked-docker's Dockerfile `git clone`d main, BuildKit keys a RUN layer
+on its command text, and so every run from 2026-08-24 on was a 1-2 minute
+all-cache-hit that re-pushed a config dated 2026-08-22, which was main just after
+v1.0.1. Nothing in the image could tell you, because the version was never in a
+label. Now it builds from the checkout, carries
+`com.stoatworks.weblinked.version`, and the smoke test checks `/api/state`
+reports the checkout's version. Transition: main re-tags the image as
+`weblinked-docker:edge`, which needs that package to grant this repo write
+access. Two things the move found in the old packaging: its healthcheck ignored
+`WEBLINKED_TOKEN`, so a container run as its README said reported unhealthy; and
+its README said mounting the avahi socket made mDNS work, when the image was
+built without avahi headers (a stub) and avahi-client uses D-Bus anyway. KMS
+and STREAM are built OFF in the image — reasons in AGENTS.md §7.
+
 **A `stream` output (RTMP/SRT) added 2026-08-10, uncommitted** — encodes the
 page to H.264/AAC through an `ffmpeg` subprocess fed over two loopback TCP
 sockets, so WebLinked can feed a Restreamer/datarhei Core or a YouTube ingest.

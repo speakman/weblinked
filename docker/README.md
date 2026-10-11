@@ -246,7 +246,8 @@ reads:
 docker build -f docker/Dockerfile -t weblinked .
 ```
 
-Roughly 20 minutes and ~4 GB of scratch space: it downloads the CEF distribution
+About 6 minutes on a 4-vCPU CI runner from a cold cache, and ~4 GB of scratch
+space: it downloads the CEF distribution
 pinned in `cmake/FetchCEF.cmake` (315 MB, checked against its sha1), compiles
 WebLinked and CEF's wrapper, and **runs the unit tests as a build step** — a
 failing suite fails the build. The result is ~1.9 GB, most of it Chromium.
@@ -261,7 +262,8 @@ container starts headless with a token set; the engine reports running, ticking
 and painting, at the version of the checkout; NDI is compiled in and the
 backends built off are absent; the preview returns a correctly sized 480×270
 frame; and the healthcheck passes. That is what
-[`smoke_assert.py`](smoke_assert.py) and the workflow check.
+[`smoke_assert.py`](smoke_assert.py) and the workflow check; the first run's output
+is in §39 of [docs/04-verification.md](../docs/04-verification.md).
 
 **Measured once, on the image this replaced** (WebLinked as of August 2026, on a
 24-core Unraid host at 1080p50) and not yet repeated on this one:

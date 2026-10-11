@@ -2841,6 +2841,59 @@ a mode change with `--kms-mode`, page-flip timing against a real refresh,
 hot-unplug, and the copy's cost on a slow CPU — `copy_us` of ~250 on this VM
 says nothing about four Cortex-A53s.
 
+## 39. The container image — built from this repository, smoke-tested in CI
+
+2026-10-11, workflow `image` (`.github/workflows/docker.yml`), run 38178538602 on
+a GitHub-hosted amd64 runner, commit `7de91c6` — the commit that moved the
+packaging in from weblinked-docker. Cold cache: the Build step took 6 min 16 s,
+CEF download included.
+
+**Why it was needed.** The image weblinked-docker published as `:edge` reported
+a config dated 2026-08-22 on every run until this one, though its last build
+was 2026-09-09: its Dockerfile `git clone`d main, and BuildKit keyed that RUN
+layer on the command text, so it never saw a new commit. Checked anonymously
+against the registry, both before and after this run:
+
+```
+weblinked-docker:edge   created: 2026-08-22T03:47:24Z   (main just after v1.0.1)
+weblinked:edge          created: 2026-10-11T22:01:40Z
+                        com.stoatworks.weblinked.version = 1.2.0
+                        org.opencontainers.image.revision = 7de91c6473cb…
+```
+
+**Inside the builder** — configure, then the suite as a build step:
+
+```
+-- WebLinked output backends: preview ndi;omt
+-- mDNS: no avahi headers — Linux builds will not advertise (install libavahi-client-dev)
+130 tests, 184420 checks, 0 failures
+```
+
+**The smoke test**, against the image loaded into the runner's Docker *before*
+anything was pushed, started on bridge networking with `WEBLINKED_TOKEN` set:
+
+```
+version: 1.2.0 | format: 1920x1080p50 | ticks: 84 | paints: 2 | dropped: 0
+backends: ['preview', 'ndi', 'omt']
+ok: headless render path is alive
+preview bytes: 518400
+healthcheck: ok
+```
+
+That proves: Chromium initialises with no display under the entrypoint's three
+switches; the clock drives it; the version is the checkout's, not a cached one;
+KMS and stream are absent as `docker/Dockerfile` intends; the preview is the
+right size (480x270 BGRA); a request carrying the token is let through; and the image's
+own healthcheck passes with a token set, which the inline check it replaced did
+not.
+
+**What it does not prove.** Nothing about NDI on the wire — the runner has no
+libndi, and no receiver has ever seen this image's output. Nothing about pacing
+under load: 84 ticks is a few seconds. Nothing about host networking or a
+tailnet bind. The re-tag to `weblinked-docker:edge` **failed** in this run
+(`denied: permission_denied: write_package`) — the step is allowed to fail, and
+needs that package to grant this repository write access.
+
 ## Not verified
 
 Everything in this section is written against a real SDK header set and compiles.

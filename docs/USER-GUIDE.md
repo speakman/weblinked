@@ -7,9 +7,10 @@ GPU window, all from the same pipeline at the same time.
 It's for someone who already knows what 1080p50 means and has a vision mixer to plug into, so
 it doesn't try to hide the broadcast decisions from you.
 
-> **What's proven, and what isn't.** WebLinked has been **run on a live event**. NDI is verified
-> end to end against a real receiver, alpha included. SDI is measured against a real DeckLink
-> Duo 2, with colour confirmed by loopback capture against an independent BT.709 reference.
+> **What's proven, and what isn't.** I've run WebLinked on a live event, though nothing was
+> measured there. NDI is verified end to end against a real receiver, alpha included. SDI is
+> measured against a real DeckLink Duo 2, with colour confirmed by loopback capture against an
+> independent BT.709 reference.
 >
 > Not everything, though. **The SDI key channel itself, audio over SDI and genlock over hours
 > are unmeasured**, and **AJA and OMT compile against their SDKs but have never met hardware or

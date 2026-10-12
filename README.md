@@ -151,11 +151,13 @@ macOS builds are signed and notarised and open normally. The Windows builds are 
 - **Frame-accurate pacing.** The engine's clock drives Chromium one frame at a time
   (`SendExternalBeginFrame`) rather than letting the browser paint on its own timer, so 50
   ticks a second means 50 paints a second.
-- **Alpha, done properly**, and measured on the wire in both directions. NDI and OMT carry the
-  page's transparency, and a DeckLink can output **key + fill** on separate SDI connectors (or
-  key internally over its own input). Chromium composites premultiplied and every destination
-  here expects straight alpha, so WebLinked un-premultiplies. Without that, soft edges, drop
-  shadows and fades all come out too dark on a keyer.
+- **Alpha, done properly.** NDI and OMT carry the page's transparency, and a DeckLink can
+  output **key + fill** on separate SDI connectors (or key internally over its own input).
+  Chromium composites premultiplied and every destination here expects straight alpha, so
+  WebLinked un-premultiplies. Without that, soft edges, drop shadows and fades all come out too
+  dark on a keyer. Measured on the wire so far: the alpha and the colour under it over NDI, and
+  the fill of an SDI key + fill. The SDI key channel itself hasn't been, and OMT has never met
+  a receiver.
 - **A background colour, per output.** The same page can leave twice: as a key down an SDI
   keyer or an NDI feed with alpha, and composited over flat green for a switcher that only has
   a chroma keyer. You set the colour per output and toggle it against transparent from the
@@ -366,9 +368,9 @@ change what's on air.
 
 ## Requirements
 
-- **NDI**: the NDI runtime or SDK, installed. It isn't redistributable, so WebLinked loads it
-  at run time. Without it the NDI output reports itself unavailable and everything else keeps
-  working.
+- **NDI**: nothing extra with a download, which carries the NDI runtime inside it. A build
+  from source loads an installed NDI runtime or SDK at run time. Without one the NDI output
+  reports itself unavailable and everything else keeps working.
 - **OMT**: `libomt` and `libvmx` beside the binary, from the
   [OMT releases](https://github.com/openmediatransport/libomtnet/releases).
   Published for Windows x64/arm64 and macOS arm64 only. There's no Linux binary.
@@ -424,7 +426,8 @@ the DeckLink SDK and libajantv2 are each obtained separately under their own
 terms; none of them are redistributed here.
 
 **NDI® is a registered trademark of Vizrt NDI AB.** See <https://ndi.video>. The
-NDI runtime is loaded at run time and is not redistributed here — see
+NDI runtime isn't in this repository: the code loads it at run time, and the
+release downloads carry a copy. See
 [docs/06-ndi-distribution.md](docs/06-ndi-distribution.md) for why, and for what
 the licence does and does not permit. NDI Tools are not redistributed either;
 get them from <https://ndi.video/tools>.

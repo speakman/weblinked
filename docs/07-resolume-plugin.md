@@ -2,8 +2,9 @@
 
 A web page as a source *inside* a Resolume composition, in `plugin/`.
 
-Status: **builds and is safe to load; not yet seen drawing in Arena.** See
-`docs/04-verification.md` sections 25 and 26 for exactly what has been
+Status: **builds, loads in Arena 7.27.1, and draws the page through a probe
+that drives it as a host does; not yet seen drawing on a Resolume layer.** See
+`docs/04-verification.md` sections 25 to 27 for exactly what has been
 established.
 
 ---

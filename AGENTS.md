@@ -416,8 +416,9 @@ The decisions in it that look arbitrary and are not:
 - **`.dockerignore` is an allow-list**, kept in step with the Dockerfile's COPY
   lines and the workflow's path filter.
 - **amd64 only**: arm64 would be a QEMU-emulated Chromium-wrapper compile.
-- **The Unraid template lives in stoatworks-unraid**, never here. Change a port,
-  mount or variable and it has to change there too.
+- **The Unraid template is `unraid/weblinked.xml`, here**, and stoatworks-unraid
+  copies it into the CA feed (`hasOwnTemplate`). Change a port, mount or variable
+  and it has to change in that file too.
 
 ## Notes
 

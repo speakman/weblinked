@@ -229,11 +229,12 @@ make Chromium render with no display at all; without them it exits with
 
 ## Unraid
 
-The Community Applications template is maintained in
-[stoatworks-unraid](https://github.com/stoatworks-labs/stoatworks-unraid), never
-in an app repository — CA reads templates only from there. A port, mount or
-variable changed here has to be changed there too; nothing keeps them in step
-automatically.
+The Community Applications template is [`unraid/weblinked.xml`](../unraid/weblinked.xml)
+in this repository. CA reads templates only from
+[stoatworks-unraid](https://github.com/stoatworks-labs/stoatworks-unraid), whose
+`scripts/gen-templates.mjs` copies this one across as it is. A port, mount or
+variable changed here has to be changed in that file too, and it only reaches CA
+when stoatworks-unraid's templates are next regenerated.
 
 ## Building it yourself
 

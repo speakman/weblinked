@@ -160,7 +160,9 @@ Ubuntu 24.04 needed only the packages listed below and took one `cmake` and one
   one without does not, and `open()` says so. It also indexes **X screens**, not
   RandR heads, so a normal multi-monitor Linux desktop presents as one screen —
   which makes `--screen=1` there not yet useful. The Linux backend has now been
-  run and renders correctly on software GL; the Windows one still has not.
+  run and renders correctly on software GL. The Windows one has drawn correctly
+  since v1.0.5, but only on a software renderer and fed by a probe rather than a
+  page (§33 of [04-verification.md](04-verification.md)); no real GPU has run it.
 - **The KMS output needs libdrm's headers**, and nothing else — no X, no EGL. It
   is Linux-only and disables itself at configure time without them:
 
